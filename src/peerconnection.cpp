@@ -61,6 +61,10 @@ PeerConnection::SignalingState PeerConnection::signalingState() const {
 	return impl()->signalingState;
 }
 
+bool PeerConnection::negotiationNeeded() const {
+	return impl()->negotiationNeeded();
+}
+
 optional<Description> PeerConnection::localDescription() const {
 	return impl()->localDescription();
 }
@@ -96,12 +100,6 @@ void PeerConnection::setLocalDescription(Description::Type type) {
 			type = Description::Type::Answer;
 		else
 			type = Description::Type::Offer;
-	}
-
-	// Only a local offer resets the negotiation needed flag
-	if (type == Description::Type::Offer && !impl()->negotiationNeeded.exchange(false)) {
-		PLOG_DEBUG << "No negotiation needed";
-		return;
 	}
 
 	// Get the new signaling state
@@ -148,6 +146,12 @@ void PeerConnection::setLocalDescription(Description::Type type) {
 
 	if (impl()->gatheringState == GatheringState::New) {
 		iceTransport->gatherLocalCandidates(impl()->localBundleMid());
+	}
+
+	if (!impl()->config.disableAutoNegotiation && newSignalingState == SignalingState::Stable) {
+		// We might need to make a new offer
+		if (impl()->negotiationNeeded())
+			setLocalDescription(Description::Type::Offer);
 	}
 }
 
@@ -221,7 +225,6 @@ void PeerConnection::setRemoteDescription(Description description) {
 
 	// Candidates will be added at the end, extract them for now
 	auto remoteCandidates = description.extractCandidates();
-	auto type = description.type();
 
 	auto iceTransport = impl()->initIceTransport();
 	if (!iceTransport)
@@ -233,14 +236,26 @@ void PeerConnection::setRemoteDescription(Description description) {
 	impl()->changeSignalingState(newSignalingState);
 	signalingLock.unlock();
 
-	if (type == Description::Type::Offer) {
-		// This is an offer, we need to answer
-		if (!impl()->config.disableAutoNegotiation)
-			setLocalDescription(Description::Type::Answer);
-	}
-
 	for (const auto &candidate : remoteCandidates)
 		addRemoteCandidate(candidate);
+
+	if (!impl()->config.disableAutoNegotiation) {
+		switch (newSignalingState) {
+		case SignalingState::Stable:
+			// We might need to make a new offer
+			if (impl()->negotiationNeeded())
+				setLocalDescription(Description::Type::Offer);
+			break;
+
+		case SignalingState::HaveRemoteOffer:
+			// We need to answer
+			setLocalDescription(Description::Type::Answer);
+			break;
+
+		default:
+			break;
+		}
+	}
 }
 
 void PeerConnection::addRemoteCandidate(Candidate candidate) {
@@ -271,13 +286,11 @@ shared_ptr<DataChannel> PeerConnection::createDataChannel(string label, DataChan
 	auto channelImpl = impl()->emplaceDataChannel(std::move(label), std::move(init));
 	auto channel = std::make_shared<DataChannel>(channelImpl);
 
-	// Renegotiation is needed iff the current local description does not have application
-	auto local = impl()->localDescription();
-	if (!local || !local->hasApplication())
-		impl()->negotiationNeeded = true;
-
-	if (!impl()->config.disableAutoNegotiation)
-		setLocalDescription();
+	if (!impl()->config.disableAutoNegotiation && impl()->signalingState.load() == SignalingState::Stable) {
+		// We might need to make a new offer
+		if (impl()->negotiationNeeded())
+			setLocalDescription(Description::Type::Offer);
+	}
 
 	return channel;
 }
@@ -291,9 +304,6 @@ void PeerConnection::onDataChannel(
 std::shared_ptr<Track> PeerConnection::addTrack(Description::Media description) {
 	auto trackImpl = impl()->emplaceTrack(std::move(description));
 	auto track = std::make_shared<Track>(trackImpl);
-
-	// Renegotiation is needed for the new or updated track
-	impl()->negotiationNeeded = true;
 
 	return track;
 }

@@ -81,6 +81,7 @@ public:
 	IceState iceState() const;
 	GatheringState gatheringState() const;
 	SignalingState signalingState() const;
+	bool negotiationNeeded() const;
 	bool hasMedia() const;
 	optional<Description> localDescription() const;
 	optional<Description> remoteDescription() const;
