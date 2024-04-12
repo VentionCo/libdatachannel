@@ -282,7 +282,7 @@ endif()
 
 target_compile_definitions(datachannel PRIVATE RTC_EXPORTS)
 
-add_library(datachannel-static STATIC EXCLUDE_FROM_ALL
+add_library(datachannel-static STATIC
 	${LIBDATACHANNEL_SOURCES}
 	${LIBDATACHANNEL_HEADERS}
 	${LIBDATACHANNEL_IMPL_SOURCES}
