@@ -8,9 +8,9 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5
+    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
     - name: Set up Homebrew
-      uses: Homebrew/actions/setup-homebrew@98cfa07b984a61682e6cd3a0833fad2006cc84ba
+      uses: Homebrew/actions/setup-homebrew@98cfa07b984a61682e6cd3a0833fad2006cc84ba # master
     - name: Install Mbed TLS
       run: brew update && brew install mbedtls
     - name: submodules
@@ -24,7 +24,7 @@ jobs:
   build-macos:
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5
+    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
     - name: Install Mbed TLS
       run: brew update && brew install mbedtls
     - name: submodules

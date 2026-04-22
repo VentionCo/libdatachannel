@@ -8,7 +8,7 @@ jobs:
   build-nomedia:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5
+    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
     - name: install packages
       run: sudo apt update && sudo apt install libssl-dev
     - name: submodules
@@ -22,8 +22,8 @@ jobs:
   build-nomedia-windows:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5
-    - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756
+    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
+    - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1
     - name: install packages
       run: choco install openssl --version=3.1.1
     - name: submodules
