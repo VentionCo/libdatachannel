@@ -4,3 +4,10 @@ updates:
     directory: "examples/signaling-server-nodejs"
     schedule:
       interval: "weekly"
+  - package-ecosystem: "github-actions"
+    directories:
+      - ".github/workflows"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 15
